@@ -1,0 +1,29 @@
+== What it is:
+
+This is a Linux program that reports accurate and trustworthy disk IO
+stats on a Linux 2.6 machine without either making stats up or lying to
+you when counter rollover happens. The numbers are taken directly from
+the kernel statistics.
+
+Information on iostat's problems:
+	http://utcc.utoronto.ca/~cks/space/blog/linux/IostatProblems
+	http://utcc.utoronto.ca/~cks/space/blog/linux/LinuxIowait
+
+Information on what IO stats you get from the kernel and what they
+mean:
+	http://utcc.utoronto.ca/~cks/space/blog/linux/DiskIOStats
+
+(this information is slightly out of date; in modern 2.6 kernels you can
+get full stats on a per-partition basis, and mxiostat supports this.)
+
+=== Bugs:
+
+- needs a manpage badly; currently documentation is in comments in
+  the script, which is less than ideal.
+- contains vestigial code that should be removed or in some cases
+  reformed.
+- usage is confusing and complex.
+
+=== Copyright:
+
+GPL v3 for now.

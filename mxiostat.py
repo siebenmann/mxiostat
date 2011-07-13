@@ -135,8 +135,7 @@ def uintSub(a, b):
 # delta operation, which means we leave 'running' intact.
 class iostats:
 	fields = ('rio', 'rmerge', 'rsect', 'ruse', 'wio', 'wmerge', 'wsect',
-		  'wuse', 'running', 'use', 'aveq', 'rduse', 'wduse',
-		  'rtime', 'wtime', 'raveq', 'waveq', )
+		  'wuse', 'running', 'use', 'aveq',)
 	def __init__(self, lst = None):
 		if not lst:
 			for f in self.fields:
@@ -267,17 +266,7 @@ def calcval(iod, td, field):
 		if iod.ruse == -1 or iod.wuse == -1:
 			return -1
 		return zerodiv(iod.ruse + iod.wuse, iod.rio + iod.wio)
-	elif field == 'rdwait':		return zerodiv(iod.rduse, iod.rio)
-	elif field == 'wdwait':		return zerodiv(iod.wduse, iod.wio)
-	elif field == 'adwait':
-		if iod.rduse is None or iod.wduse is None:
-			return None
-		if iod.rduse == -1 or iod.wduse == -1:
-			return -1
-		return zerodiv(iod.rduse + iod.wduse, iod.rio + iod.wio)
 	elif field == 'aveq':		return zerodiv(iod.aveq, iod.use)
-	elif field == 'raveq':		return zerodiv(iod.raveq, iod.rtime)
-	elif field == 'waveq':		return zerodiv(iod.waveq, iod.wtime)
 	elif field == 'rgrp':		return zerodiv(iod.rsect, iod.rio)
 	elif field == 'wgrp':		return zerodiv(iod.wsect, iod.wio)
 	elif field == 'agrp':
@@ -292,18 +281,6 @@ def calcval(iod, td, field):
 		if iod.use < 0:
 			return -1
 		return iod.use / (td*10)
-	elif field == 'rutil':
-		if iod.rtime is None:
-			return None
-		if iod.rtime < 0:
-			return -1
-		return iod.rtime / (td*10)
-	elif field == 'wutil':
-		if iod.wtime is None:
-			return None
-		if iod.wtime < 0:
-			return -1
-		return iod.wtime / (td*10)
 	elif hasattr(iod, field) and field in persecs:
 		return getattr(iod, field) / td
 	elif hasattr(iod, field):
@@ -315,16 +292,13 @@ def calcval(iod, td, field):
 fwidth = {'act': 4, 'rio': 6, 'wio': 6, 'rmerge': 6, 'wmerge': 6,
 	  'rsect': 6, 'wsect': 6, 'rwait': 5, 'wwait': 5, 'await': 5,
 	  'rgrp': 5, 'wgrp': 5, 'agrp': 5,
-	  'rdwait': 6, 'wdwait': 6, 'adwait': 6,
-	  'raveq': 5, 'waveq': 5, 'rutil': 5, 'wutil': 5,
 	  'aveq': 4, 'util': 4,
 	  'aio': 6, 'asect': 6, }
 # The order in which fields are displayed in the output.
 forder = ('act',
 	  'rio', 'rmerge', 'rsect', 'rwait', 'rgrp',
 	  'wio', 'wmerge', 'wsect', 'wwait', 'wgrp',
-	  'agrp', 'aveq', 'await', 'util',
-	  'rdwait', 'wdwait', 'adwait', 'rutil', 'wutil', 'raveq', 'waveq', )
+	  'agrp', 'aveq', 'await', 'util',)
 
 # Display an iostat delta, using the given time delta to convert the
 # relevant numbers to a per-second count. The time delta is in seconds.
@@ -688,4 +662,3 @@ if __name__ == "__main__":
 # number. See also http://utcc.utoronto.ca/~cks/space/blog/linux/DiskIOStats
 # for some additional notes and exact details.
 #
-# (additional fields visible in the source are vestigial)

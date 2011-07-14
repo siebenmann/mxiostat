@@ -16,10 +16,11 @@ mean:
 (this information is slightly out of date; in modern 2.6 kernels you can
 get full stats on a per-partition basis, and mxiostat supports this.)
 
+See mxiostat.1 for a manpage.
+
 === Bugs:
 
-- needs a manpage badly; currently documentation is in comments in
-  the script, which is less than ideal.
+- manpage could stand improvement.
 - contains vestigial code that should be removed or in some cases
   reformed.
 - usage is confusing and complex.

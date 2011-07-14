@@ -16,7 +16,7 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
-mxiostat \- A version of iostat that actually reports real numbers taken straight from the kernel.
+mxiostat \- Report reliable kernel disk IO statistics
 .SH SYNOPSIS
 .SY mxiostat
 .OP \-qvaH
@@ -26,8 +26,38 @@ mxiostat \- A version of iostat that actually reports real numbers taken straigh
 .RI [DELAY]]
 .SH DESCRIPTION
 .B mxiostat
-is a version of iostat that actually reports real numbers taken straight
-from the kernel. This uses the 2.6 /proc/diskstats stuff.
+is a version of iostat's disk IO statistics that actually reports real
+numbers for disk IO that are taken straight from the kernel. It requires
+a Linux 2.6 kernel. On relatively recent 2.6 kernels, it can also report
+full per-partition IO statistics; on older kernels, per-partition stats
+are incomplete.
+.\" TODO: determine which kernel version is required
+.SH ARGUMENTS
+Which form of arguments is used depends on the command line options.
+Without options
+.B mxiostat
+reports on a single device and you can supply
+.IR DEV .
+With
+.BR \-a ,
+mxiostat reports on all disks (unless you specify a subset) and you
+can supply
+.IR FIELD
+(or multiple fields, comma separated).
+.TP
+.I DELAY
+The delay between reports, in seconds. Defaults to 1 second.
+.TP
+.I DEV
+Device names are given without the leading /dev, ie simply 'sda'. The
+default device is sda.
+.TP
+.I FIELD
+The field (or fields, with comma separation). See below for what fields
+are available. The special field name
+.B all
+means 'all available normal fields'. The default field depends on the
+specific command line ptions; see below.
 .SH OPTIONS
 A summary of options is included below.
 .TP
@@ -40,28 +70,32 @@ Be more verbose in some situations.
 .BI -c COUNT
 Exit after printing COUNT reports.
 .TP
-.B -a
+.B \-a
 Report on particular stat(s) for all disks, instead of all stats for
-one disk
+one disk. In this mode the default field to report on is
+.BR util .
 .TP
-.B -C
+.B \-C
 Compact reporting for multiple fields in
-.B -a
-mode ; all fields for all disks are printed on one line.
+.B \-a
+mode; all fields for all disks are printed on one line.
 .TP
-.B -V
-\'Vertical\' report for multiple disks in -a mode, where each disk is
-printed on one line
+.B \-V
+Produce a 'vertical' report for multiple disks in -a mode, where each
+disk is printed on a separate line. In this mode the default field to
+report on is
+.BR all ,
+ie all fields.
 .TP
-.BI -D DEV,...
+.BI \-D DEV,...
 In 
-.B -a
-, report on only these device(s) instead of all devices
+.BR \-a ,
+report on only these device(s) instead of all devices
 .TP
-.BI -X DEV,...
+.BI \-X DEV,...
 In 
-.B -a
-, exclude these devices from the report
+.BR \-a ,
+exclude these devices from the report
 .TP
 .I DELAY
 The number of seconds between report lines
@@ -95,13 +129,13 @@ rsect / rio, average number of sectors per request (more or less)
 .SS
 .B rwait
 .nf
-Average wait time for read requests *in milliseconds*
+average wait time for read requests in milliseconds
 .fi
 .PP
 .SS
 .B  w*
 .nf
-As with the r* versions, but for writes
+as with the r* versions, but for writes
 .fi
 .PP
 .SS
@@ -113,7 +147,7 @@ Overall average number of sectors per request
 .SS
 .B await
 .nf
-overall average wait time for requests (in msec)
+overall average wait time for requests in milliseconds
 .fi
 .PP
 .SS
@@ -150,7 +184,6 @@ percent utilization of the drive (ie, % busy)
 Most of these fields are whatever-per-second; act is an instantaneous
 number. See also http://utcc.utoronto.ca/~cks/space/blog/linux/DiskIOStats
 for some additional notes and exact details.
-(additional fields visible in the source are vestigial)
 .SH FILES
 .ta
 .nf
@@ -163,3 +196,4 @@ for some additional notes and exact details.
 mxiostat was written by Chris Siebenmann <cks.git01@cs.toronto.edu>
 .PP
 This manual page was written by John Cooper <john@choffee.co.uk>
+(with subsequent mangling by Chris Siebenmann)

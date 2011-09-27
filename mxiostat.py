@@ -633,7 +633,11 @@ def process(args):
 		sys.exit(1)
 
 if __name__ == "__main__":
-	process(sys.argv[1:])
+	try:
+		process(sys.argv[1:])
+	except KeyboardInterrupt:
+		print
+		sys.exit(0)
 
 #
 # -----

@@ -19,7 +19,7 @@
 mxiostat \- Report reliable kernel disk IO statistics
 .SH SYNOPSIS
 .SY mxiostat
-.OP \-qvaH
+.OP \-qvaiH
 .OP \-D DEV,...
 .OP \-c COUNT
 .RI [[DEV|FIELD,...]
@@ -87,6 +87,9 @@ report on is
 .BR all ,
 ie all fields.
 .TP
+.B \-i
+Round fields to nearest integer.
+.TP
 .BI \-D DEV,...
 In 
 .BR \-a ,
@@ -97,8 +100,6 @@ In
 .BR \-a ,
 exclude these devices from the report
 .TP
-.I DELAY
-The number of seconds between report lines
 .PP
 .SH FIELD VALUES AND WHAT THEY MEAN
 .SS

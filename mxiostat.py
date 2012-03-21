@@ -3,7 +3,7 @@
 # A version of iostat that actually reports real numbers taken straight
 # from the kernel. This uses the 2.6 /proc/diskstats stuff.
 #
-# Usage: mxiostat.py [-qvaH] [-D DEV,...] [-c COUNT] [[DEV|FIELD,...] [DELAY]]
+# Usage: mxiostat.py [-qvaiH] [-D DEV,...] [-c COUNT] [[DEV|FIELD,...] [DELAY]]
 #
 # -q: don't print the periodic header.
 # -v: be more verbose in some situations.
@@ -225,7 +225,9 @@ def getrealdisks(dkstats):
 # zero depending on the size of 'num'.
 # Life is complicated by our need to cope with the rounding that goes
 # on with floating point numbers during printing.
-def decimalize(num, fw):
+def decimalize(num, fw, intdisp):
+	if intdisp:
+		num = int(round(num,0))
 	maxtwo = 10 ** (fw-3)
 	maxone = 10 ** (fw-2)
 	# Sometimes formatting a floating point number for printing with
@@ -302,13 +304,13 @@ forder = ('act',
 
 # Display an iostat delta, using the given time delta to convert the
 # relevant numbers to a per-second count. The time delta is in seconds.
-def display(iod, td):
+def display(iod, td, intdisp):
 	outl = []
 	for fn in forder:
 		r = calcval(iod, td, fn)
 		if r is None:
 			continue
-		outl.append(decimalize(r, fwidth[fn]))
+		outl.append(decimalize(r, fwidth[fn], intdisp))
 	print " ".join(outl)
 	# And flush our output if we are writing to a file or a pipe for
 	# logging purposes:
@@ -341,11 +343,11 @@ def mheader(fields, devl):
 	return ml
 
 # Print the mass report line.
-def mdisplay(field, deltas, td, mw, fname):
+def mdisplay(field, deltas, td, mw, fname, intdisp):
 	outl = [fmtto(fname, mw)]
 	for d in deltas:
 		r = calcval(d, td, field)
-		outl.append(decimalize(r, mw))
+		outl.append(decimalize(r, mw, intdisp))
 	print " ".join(outl)
 	sys.stdout.flush()
 
@@ -365,26 +367,26 @@ def hheader(fields, devl):
 		for d in devl:
 			outl.append(fmtto(d, fw))
 	print " ".join(outl)
-def hdisplay(fields, deltas, td):
+def hdisplay(fields, deltas, td, intdisp):
 	outl = []
 	for fn, fw in fields:
 		outl.append(fmtto("", fw))
 		for d in deltas:
 			r = calcval(d, td, fn)
-			outl.append(decimalize(r, fw))
+			outl.append(decimalize(r, fw, intdisp))
 	print " ".join(outl)
 	sys.stdout.flush()
 
 # 'vertical' display of multiple values.
 # NNGH HEAD HURTS HATE IT
-def vdisplay(dt, dname, td, flist):
+def vdisplay(dt, dname, td, flist, intdisp):
 	outl = []
 	outl.append("%-6s" % dname)
 	for fn in flist:
 		r = calcval(dt, td, fn)
 		if r is None:
 			continue
-		outl.append(decimalize(r, fwidth[fn]))
+		outl.append(decimalize(r, fwidth[fn], intdisp))
 	print " ".join(outl)
 	# And flush our output if we are writing to a file or a pipe for
 	# logging purposes:
@@ -402,7 +404,7 @@ def vheader(dt, flist):
 # Our main processing loop proceeds by getting the initial stats,
 # then looping around sleeping the delay time, getting new stats,
 # computing the delta, and finally displaying them.
-def statloop(every, dev, showheader = 1, max = 0):
+def statloop(every, dev, showheader = 1, max = 0, intdisp = 0):
 	oldUt = getuptime("/proc/uptime")
 	if os.path.exists("/proc/diskstats"):
 		statFile = "/proc/diskstats"
@@ -434,7 +436,7 @@ def statloop(every, dev, showheader = 1, max = 0):
 			continue
 		if showheader and lc % 22 == 0:
 			header(iosd, td)
-		display(iosd, td)
+		display(iosd, td, intdisp)
 		oldSt = newSt
 		oldUt = newUt
 		lc += 1
@@ -442,7 +444,7 @@ def statloop(every, dev, showheader = 1, max = 0):
 # Our main processing loop proceeds by getting the initial stats,
 # then looping around sleeping the delay time, getting new stats,
 # computing the delta, and finally displaying them.
-def massloop(every, fields, devlist, showheader, max, disp, excl):
+def massloop(every, fields, devlist, showheader, max, disp, excl, intdisp):
 	oldUt = getuptime("/proc/uptime")
 	if os.path.exists("/proc/diskstats"):
 		statFile = "/proc/diskstats"
@@ -518,11 +520,11 @@ def massloop(every, fields, devlist, showheader, max, disp, excl):
 				mheader(fields, devlist)
 			lines = 0
 		if disp == 'horiz':
-			hdisplay(flist, deltas, td)
+			hdisplay(flist, deltas, td, intdisp)
 			lines += 1
 		elif disp == 'vert':
 			for i in range(len(devlist)):
-				vdisplay(deltas[i], devlist[i], td, fields)
+				vdisplay(deltas[i], devlist[i], td, fields, intdisp)
 				lines += 1
 			# force a header line for every report if we have
 			# enough devices that two reports always overflow.
@@ -534,7 +536,7 @@ def massloop(every, fields, devlist, showheader, max, disp, excl):
 					fname = ""
 				else:
 					fname = field
-				mdisplay(field, deltas, td, mw, fname)
+				mdisplay(field, deltas, td, mw, fname, intdisp)
 				lines += 1
 			# force a header line every report as above (but
 			# for fields).
@@ -550,15 +552,15 @@ def die(msg):
 	error(msg)
 	sys.exit(1)
 def usage():
-	sys.stderr.write("usage: mxiostat [-avqCV] [-D disk,disk,...] [-X disk,disk,...] [-c COUNT] [[DEV|FIELD[,FIELD]] [DELAY]]\n")
+	sys.stderr.write("usage: mxiostat [-avqiCV] [-D disk,disk,...] [-X disk,disk,...] [-c COUNT] [[DEV|FIELD[,FIELD]] [DELAY]]\n")
 	sys.stderr.write("\tDEV defaults to sda, FIELD to util, DELAY to 1 second\n")
 	sys.exit(1)
 def process(args):
 	repmax = 0; every = 1; dev = "sda"; showheader = 1
 	verbose = 0; alldevs = 0; horiz = 0; vert = 0
-	devlist = []; excl = []
+	devlist = []; excl = []; intdisp = 0
 	try:
-		opt, arg = getopt.getopt(args, 'aqc:vD:CVX:', [])
+		opt, arg = getopt.getopt(args, 'aqc:vD:CVX:i', [])
 	except getopt.GetoptError, e:
 		error(str(e))
 		usage()
@@ -584,6 +586,8 @@ def process(args):
 				repmax = int(a)
 			except ValueError:
 				die("-c argument '%s' is not an integer" % a)
+		elif o == '-i':
+			intdisp = 1
 		else:
 			die("Chris failed to handle switch '%s'" % o)
 	if len(arg) > 2:
@@ -621,9 +625,9 @@ def process(args):
 	try:
 		if alldevs:
 			massloop(every, fields, devlist, showheader, \
-				 repmax, display, excl)
+				 repmax, display, excl, intdisp)
 		else:
-			statloop(every, dev, showheader, repmax)
+			statloop(every, dev, showheader, repmax, intdisp)
 		sys.exit(0)
 	except IOEx, e:
 		error(str(e))
@@ -665,4 +669,3 @@ if __name__ == "__main__":
 # Most of these fields are whatever-per-second; act is an instantaneous
 # number. See also http://utcc.utoronto.ca/~cks/space/blog/linux/DiskIOStats
 # for some additional notes and exact details.
-#

@@ -19,7 +19,7 @@
 mxiostat \- Report reliable kernel disk IO statistics
 .SH SYNOPSIS
 .SY mxiostat
-.OP \-qvaiH
+.OP \-qvaizHV
 .OP \-D DEV,...
 .OP \-c COUNT
 .RI [[DEV|FIELD,...]
@@ -81,11 +81,21 @@ Compact reporting for multiple fields in
 mode; all fields for all disks are printed on one line.
 .TP
 .B \-V
-Produce a 'vertical' report for multiple disks in -a mode, where each
+Produce a 'vertical' report for multiple disks in
+.B \-a
+mode, where each
 disk is printed on a separate line. In this mode the default field to
 report on is
 .BR all ,
 ie all fields.
+.TP
+.B \-z
+Skip reporting disks that have no activity in the fields being shown.
+This only makes sense in
+.B \-aV
+mode and produces an error otherwise. This feature is inspired by
+a similar option in Solaris
+.BR iostat .
 .TP
 .B \-i
 Round fields to nearest integer.

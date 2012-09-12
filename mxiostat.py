@@ -14,6 +14,8 @@
 #     disks are printed on one line.
 # -V: 'vertical' report for multiple disks in -a mode, where each disk is
 #     printed on one line
+# -z: do not print stats for disks where all the stats are zero. Only works
+#     in -aV.
 # -D DEV,...: in -a, report on only these device(s) instead of all devices
 # -X DEV,...: in -a, exclude these devices from the report
 #
@@ -379,18 +381,24 @@ def hdisplay(fields, deltas, td, intdisp):
 
 # 'vertical' display of multiple values.
 # NNGH HEAD HURTS HATE IT
-def vdisplay(dt, dname, td, flist, intdisp):
+def vdisplay(dt, dname, td, flist, intdisp, skipzero):
 	outl = []
 	outl.append("%-6s" % dname)
+	allzero = True
 	for fn in flist:
 		r = calcval(dt, td, fn)
 		if r is None:
 			continue
+		if r != 0:
+			allzero = False
 		outl.append(decimalize(r, fwidth[fn], intdisp))
+	if skipzero and allzero:
+		return 0
 	print " ".join(outl)
 	# And flush our output if we are writing to a file or a pipe for
 	# logging purposes:
 	sys.stdout.flush()
+	return 1
 # Print the report header.
 def vheader(dt, flist):
 	outl = ["%-6s" % " ",]
@@ -444,7 +452,8 @@ def statloop(every, dev, showheader = 1, max = 0, intdisp = 0):
 # Our main processing loop proceeds by getting the initial stats,
 # then looping around sleeping the delay time, getting new stats,
 # computing the delta, and finally displaying them.
-def massloop(every, fields, devlist, showheader, max, disp, excl, intdisp):
+def massloop(every, fields, devlist, showheader, max, disp, excl, intdisp,
+	     skipzero):
 	oldUt = getuptime("/proc/uptime")
 	if os.path.exists("/proc/diskstats"):
 		statFile = "/proc/diskstats"
@@ -524,11 +533,13 @@ def massloop(every, fields, devlist, showheader, max, disp, excl, intdisp):
 			lines += 1
 		elif disp == 'vert':
 			for i in range(len(devlist)):
-				vdisplay(deltas[i], devlist[i], td, fields, intdisp)
-				lines += 1
+				lines += vdisplay(deltas[i], devlist[i], td, fields, intdisp, skipzero)
 			# force a header line for every report if we have
 			# enough devices that two reports always overflow.
-			if len(devlist) >= 11:
+			# We care about lines due to skipzero, because then
+			# an iteration can be unpredictably smaller than
+			# the full list.
+			if len(devlist) >= 11 and lines >= 11:
 				lines = 22
 		else:
 			for field in fields:
@@ -552,15 +563,15 @@ def die(msg):
 	error(msg)
 	sys.exit(1)
 def usage():
-	sys.stderr.write("usage: mxiostat [-avqiCV] [-D disk,disk,...] [-X disk,disk,...] [-c COUNT] [[DEV|FIELD[,FIELD]] [DELAY]]\n")
+	sys.stderr.write("usage: mxiostat [-avqizCV] [-D disk,disk,...] [-X disk,disk,...] [-c COUNT] [[DEV|FIELD[,FIELD]] [DELAY]]\n")
 	sys.stderr.write("\tDEV defaults to sda, FIELD to util, DELAY to 1 second\n")
 	sys.exit(1)
 def process(args):
 	repmax = 0; every = 1; dev = "sda"; showheader = 1
 	verbose = 0; alldevs = 0; horiz = 0; vert = 0
-	devlist = []; excl = []; intdisp = 0
+	devlist = []; excl = []; intdisp = 0; skipzero = 0
 	try:
-		opt, arg = getopt.getopt(args, 'aqc:vD:CVX:i', [])
+		opt, arg = getopt.getopt(args, 'aqc:vD:CVX:iz', [])
 	except getopt.GetoptError, e:
 		error(str(e))
 		usage()
@@ -577,6 +588,8 @@ def process(args):
 			fields = forder
 		elif o == '-v':
 			verbose += 1
+		elif o == '-z':
+			skipzero = 1
 		elif o == '-D':
 			devlist = a.split(',')
 		elif o == '-X':
@@ -614,6 +627,8 @@ def process(args):
 			for f in fields:
 				if f not in fwidth:
 					die("no field %s" % f)
+	if skipzero and not (vert and alldevs):
+		die("-z requires -aV")
 	if not (horiz or vert):
 		display = "normal"
 	elif horiz and vert:
@@ -625,7 +640,7 @@ def process(args):
 	try:
 		if alldevs:
 			massloop(every, fields, devlist, showheader, \
-				 repmax, display, excl, intdisp)
+				 repmax, display, excl, intdisp, skipzero)
 		else:
 			statloop(every, dev, showheader, repmax, intdisp)
 		sys.exit(0)

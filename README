@@ -1,9 +1,9 @@
 == What it is:
 
 This is a Linux program that reports accurate and trustworthy disk IO
-stats on a Linux 2.6 machine without either making stats up or lying to
-you when counter rollover happens. The numbers are taken directly from
-the kernel statistics.
+stats on a Linux 2.6/3.x machine without either making stats up or lying
+to you when counter rollover happens. The numbers are taken directly
+from the kernel statistics.
 
 Information on iostat's problems:
 	http://utcc.utoronto.ca/~cks/space/blog/linux/IostatProblems
